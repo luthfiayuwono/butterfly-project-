@@ -23,10 +23,11 @@ df = pd.DataFrame({
 })
 
 # Add visual helper columns
+# We use 'Significant' directly for the logic
 df['Color'] = df['Percent_Change'].apply(lambda x: '#E67E22' if x < -15 else ('#7D9452' if x > 15 else '#D5D8DC'))
-df['Border_Width'] = df['Significant'].apply(lambda x: 1.5 if x else 0)
 
 # 3. Create the Plot
+# We use 'category_orders' to ensure the colors map correctly
 fig = px.strip(
     df, 
     x='Percent_Change', 
@@ -36,12 +37,22 @@ fig = px.strip(
     stripmode='overlay'
 )
 
-# 4. Styling (Careful with indentation here!)
-fig.update_traces(
-    marker=dict(size=9, opacity=0.9, line=dict(color='black')),
-    marker_line_width=df['Border_Width']
-)
+# 4. Correct way to handle multiple traces for border widths
+# We loop through each trace (Orange, Grey, Green) and apply styling
+for trace in fig.data:
+    # Get the species names for this specific trace
+    trace_species = trace.hovertext
+    # Filter original dataframe to find if these species are 'Significant'
+    trace_df = df[df['Species'].isin(trace_species)]
+    
+    # Set the marker properties
+    trace.marker.size = 9
+    trace.marker.opacity = 0.9
+    trace.marker.line.color = 'black'
+    # Map the border width list only for the items in this trace
+    trace.marker.line.width = [1.5 if s else 0 for s in trace_df['Significant']]
 
+# 5. Formatting the Layout
 fig.update_layout(
     title={'text': "<b>Change in butterfly abundance, 2000-20</b>", 'x': 0.5, 'xanchor': 'center'},
     plot_bgcolor='white',
@@ -54,9 +65,10 @@ fig.update_layout(
         gridcolor='#F0F0F0'
     ),
     yaxis=dict(showticklabels=False, title=""),
-    height=400
+    height=400,
+    showlegend=False
 )
 
-# 5. Render
+# 6. Render
 st.plotly_chart(fig, use_container_width=True)
 st.caption("Each dot represents one species. Outlined dots indicate statistically significant trends.")
