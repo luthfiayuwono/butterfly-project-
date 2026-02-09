@@ -49,13 +49,18 @@ fig = px.strip(
 )
 
 # 5. Styling to match your original image
+# Create a column for the border width based on significance
+df['border_width'] = df['Significant'].apply(lambda x: 1.5 if x else 0)
+
 fig.update_traces(
     marker=dict(
         size=9, 
         opacity=0.9,
-        line=dict(
-            width=df['Significant'].apply(lambda x: 1.5 if x else 0),
-            color='black'
+        line=dict(color='black') # We set the color here...
+    )
+)
+
+fig.update_traces(marker_line_width=df['border_width'])
         )
     )
 )
