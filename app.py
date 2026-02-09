@@ -6,21 +6,13 @@ import numpy as np
 # 1. Page Configuration
 st.set_page_config(page_title="Butterfly Abundance Chart", layout="wide")
 
-# Custom CSS for fonts and styling
-st.markdown("""
-    <style>
-    .main { background-color: #ffffff; }
-    .title { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-weight: bold; }
-    </style>
-    """, unsafe_allow_html=True)
-
 # 2. Generate Mock Data
 np.random.seed(42)
 n_points = 450
 change_data = np.concatenate([
-    np.random.normal(-65, 18, 250), # Large group declining
-    np.random.normal(0, 10, 80),    # Stable group
-    np.random.normal(60, 35, 120)   # Improving group
+    np.random.normal(-65, 18, 250), 
+    np.random.normal(0, 10, 80),    
+    np.random.normal(60, 35, 120)   
 ])
 change_data = np.clip(change_data, -98, 140)
 
@@ -30,15 +22,11 @@ df = pd.DataFrame({
     'Significant': np.random.choice([True, False], len(change_data), p=[0.4, 0.6])
 })
 
-# 3. Logic for Visual Styles
-def get_color(val):
-    if val < -15: return '#E67E22'  # Orange-ish
-    if val > 15: return '#7D9452'   # Muted Green
-    return '#D5D8DC'                # Light Grey
+# Add visual helper columns
+df['Color'] = df['Percent_Change'].apply(lambda x: '#E67E22' if x < -15 else ('#7D9452' if x > 15 else '#D5D8DC'))
+df['Border_Width'] = df['Significant'].apply(lambda x: 1.5 if x else 0)
 
-df['Color'] = df['Percent_Change'].apply(get_color)
-
-# 4. Create the Interactive Beeswarm (Strip Plot)
+# 3. Create the Plot
 fig = px.strip(
     df, 
     x='Percent_Change', 
@@ -48,30 +36,15 @@ fig = px.strip(
     stripmode='overlay'
 )
 
-# 5. Styling to match your original image
-# Create a column for the border width based on significance
-df['border_width'] = df['Significant'].apply(lambda x: 1.5 if x else 0)
-
+# 4. Styling (Careful with indentation here!)
 fig.update_traces(
-    marker=dict(
-        size=9, 
-        opacity=0.9,
-        line=dict(color='black') # We set the color here...
-    )
-)
-
-fig.update_traces(marker_line_width=df['border_width'])
-        )
-    )
+    marker=dict(size=9, opacity=0.9, line=dict(color='black')),
+    marker_line_width=df['Border_Width']
 )
 
 fig.update_layout(
-    title={
-        'text': "<b>Change in butterfly abundance, 2000-20</b>",
-        'y':0.9, 'x':0.5, 'xanchor': 'center', 'yanchor': 'top',
-        'font': dict(size=24, color='#333333')
-    },
-    plot_bgcolor='rgba(0,0,0,0)',
+    title={'text': "<b>Change in butterfly abundance, 2000-20</b>", 'x': 0.5, 'xanchor': 'center'},
+    plot_bgcolor='white',
     xaxis=dict(
         title="",
         range=[-110, 150],
@@ -81,12 +54,9 @@ fig.update_layout(
         gridcolor='#F0F0F0'
     ),
     yaxis=dict(showticklabels=False, title=""),
-    height=400,
-    margin=dict(l=50, r=50, t=100, b=50)
+    height=400
 )
 
-# 6. Render in Streamlit
+# 5. Render
 st.plotly_chart(fig, use_container_width=True)
-
-# Footer text
 st.caption("Each dot represents one species. Outlined dots indicate statistically significant trends.")
